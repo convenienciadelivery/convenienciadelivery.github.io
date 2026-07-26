@@ -1,0 +1,159 @@
+.footer {
+  margin-top: var(--espaco-8);
+  padding: var(--espaco-6) var(--espaco-4) var(--espaco-8);
+  background: var(--cor-superficie);
+  border-top: 1px solid var(--cor-borda);
+  text-align: center;
+}
+
+.footer-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--raio-md);
+  margin: 0 auto var(--espaco-3);
+  object-fit: cover;
+}
+
+.footer-nome {
+  font-size: var(--texto-lg);
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.footer-slogan {
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-secundario);
+  margin-bottom: var(--espaco-4);
+}
+
+.footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-2);
+  margin-bottom: var(--espaco-4);
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-secundario);
+  font-weight: 600;
+}
+
+.footer-info a {
+  color: var(--cor-primaria);
+  font-weight: 700;
+}
+
+.footer-redes {
+  display: flex;
+  justify-content: center;
+  gap: var(--espaco-3);
+  margin-bottom: var(--espaco-4);
+}
+
+.footer-redes a {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--cor-superficie-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transicao-rapida), color var(--transicao-rapida);
+}
+
+.footer-redes a:hover {
+  background: var(--cor-primaria);
+  color: white;
+}
+
+.footer-redes svg {
+  width: 20px;
+  height: 20px;
+}
+
+.footer-horario {
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-secundario);
+  margin-bottom: var(--espaco-4);
+  font-weight: 600;
+}
+
+.footer-copy {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-secundario);
+  padding-top: var(--espaco-4);
+  border-top: 1px solid var(--cor-borda);
+}
+
+.footer-admin-link {
+  display: inline-block;
+  margin-top: var(--espaco-3);
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-secundario);
+  opacity: 0.6;
+}
+
+.footer-admin-link:hover {
+  opacity: 1;
+  color: var(--cor-primaria);
+}
+
+.pwa-banner {
+  display: none;
+  position: fixed;
+  bottom: 90px;
+  left: 16px;
+  right: 16px;
+  max-width: 400px;
+  margin: 0 auto;
+  background: var(--cor-superficie);
+  border-radius: var(--raio-lg);
+  padding: var(--espaco-4);
+  box-shadow: var(--sombra-lg);
+  z-index: var(--z-toast);
+  border: 1px solid var(--cor-borda);
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.pwa-banner.visivel {
+  display: flex;
+  animation: slideUp 0.3s ease;
+}
+
+.pwa-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-banner-info strong {
+  display: block;
+  font-size: var(--texto-sm);
+  margin-bottom: 2px;
+}
+
+.pwa-banner-info span {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-secundario);
+}
+
+.pwa-banner-acoes {
+  display: flex;
+  gap: var(--espaco-2);
+  flex-shrink: 0;
+}
+
+.pwa-banner-acoes button {
+  padding: 8px 12px;
+  border-radius: var(--raio-md);
+  font-size: var(--texto-xs);
+  font-weight: 700;
+}
+
+.pwa-instalar {
+  background: var(--cor-primaria);
+  color: white;
+}
+
+.pwa-fechar {
+  background: var(--cor-superficie-alt);
+  color: var(--cor-texto-secundario);
+}

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    (function () {
+      var path = location.pathname || "/";
+      var base = path.indexOf("/admin") !== -1
+        ? path.replace(/\/admin(?:\/.*)?$/, "/")
+        : (/\.html?$/i.test(path) ? path.replace(/\/[^/]+$/, "/") : (path.endsWith("/") ? path : path + "/"));
+      window.APP_BASE = base;
+      window.assetUrl = function (p) {
+        return base + String(p || "").replace(/^\.\//, "").replace(/^\//, "");
+      };
+      /* Admin NÃO usa <base> para não quebrar admin.css */
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Admin | Cardápio Digital</title>
+  <link rel="icon" href="../assets/images/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <!-- Login -->
+  <div id="tela-login" class="login-wrap">
+    <div class="login-card">
+      <img src="../assets/images/logo.svg" alt="Logo" class="login-logo" />
+      <h1>Painel Administrativo</h1>
+      <p class="login-sub">Gerencie seu cardápio digital</p>
+      <form id="form-login" autocomplete="on">
+        <div class="campo">
+          <label for="login-usuario">Usuário</label>
+          <input type="text" id="login-usuario" required autocomplete="username" placeholder="admin" />
+        </div>
+        <div class="campo">
+          <label for="login-senha">Senha</label>
+          <input type="password" id="login-senha" required autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <p class="login-erro oculto" id="login-erro">Usuário ou senha incorretos</p>
+        <button type="submit" class="btn btn-primario btn-bloco">Entrar</button>
+      </form>
+      <p class="login-dica">Padrão: <strong>admin</strong> / <strong>admin123</strong></p>
+      <a href="../" class="voltar-loja">← Voltar para a loja</a>
+    </div>
+  </div>
+
+  <!-- Painel -->
+  <div id="tela-admin" class="admin oculto">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="../assets/images/logo.svg" alt="" />
+        <div>
+          <strong>Admin</strong>
+          <span id="sidebar-loja-nome">Loja</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button type="button" class="nav-item ativo" data-aba="dashboard">📊 Dashboard</button>
+        <button type="button" class="nav-item" data-aba="produtos">🍺 Produtos</button>
+        <button type="button" class="nav-item" data-aba="categorias">📁 Categorias</button>
+        <button type="button" class="nav-item" data-aba="banners">🖼️ Banners</button>
+        <button type="button" class="nav-item" data-aba="promocoes">🏷️ Promoções</button>
+        <button type="button" class="nav-item" data-aba="loja">🏪 Loja</button>
+        <button type="button" class="nav-item" data-aba="config">⚙️ Configurações</button>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="../" target="_blank" class="btn btn-outline btn-bloco">Ver loja</a>
+        <button type="button" class="btn btn-ghost btn-bloco" id="btn-logout">Sair</button>
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button type="button" class="btn-menu" id="btn-menu" aria-label="Menu">☰</button>
+        <h2 id="titulo-aba">Dashboard</h2>
+        <div class="topbar-acoes">
+          <button type="button" class="btn btn-outline" id="btn-exportar">Exportar JSON</button>
+          <button type="button" class="btn btn-primario" id="btn-salvar-tudo">Salvar alterações</button>
+        </div>
+      </header>
+
+      <main class="admin-content">
+        <!-- Dashboard -->
+        <section class="aba ativo" id="aba-dashboard">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-label">Produtos ativos</span>
+              <strong id="stat-produtos">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Em promoção</span>
+              <strong id="stat-promos">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Categorias</span>
+              <strong id="stat-categorias">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Banners</span>
+              <strong id="stat-banners">0</strong>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Como editar o cardápio</h3>
+            <ol class="lista-ajuda">
+              <li>Altere produtos, categorias, banners e dados da loja neste painel.</li>
+              <li>Clique em <strong>Salvar alterações</strong> — os dados ficam no navegador (LocalStorage).</li>
+              <li>A loja pública lê automaticamente as alterações salvas neste dispositivo.</li>
+              <li>Para publicar em outro computador/hospedagem, use <strong>Exportar JSON</strong> e substitua os arquivos em <code>data/</code>.</li>
+              <li>Altere o WhatsApp em <strong>Loja</strong> para receber pedidos no seu número.</li>
+            </ol>
+          </div>
+          <div class="card aviso-card">
+            <h3>⚠️ Importante para venda comercial</h3>
+            <p>Troque a senha padrão em <strong>Configurações</strong> antes de entregar ao cliente. Configure WhatsApp, horários e taxa de entrega.</p>
+          </div>
+        </section>
+
+        <!-- Produtos -->
+        <section class="aba" id="aba-produtos">
+          <div class="toolbar">
+            <input type="search" id="busca-produtos" placeholder="Buscar produto..." />
+            <select id="filtro-cat-produtos">
+              <option value="">Todas categorias</option>
+            </select>
+            <button type="button" class="btn btn-primario" id="btn-novo-produto">+ Novo produto</button>
+          </div>
+          <div class="table-wrap">
+            <table class="tabela" id="tabela-produtos">
+              <thead>
+                <tr>
+                  <th>Foto</th>
+                  <th>Nome</th>
+                  <th>Categoria</th>
+                  <th>Preço</th>
+                  <th>Promo</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Categorias -->
+        <section class="aba" id="aba-categorias">
+          <div class="toolbar">
+            <button type="button" class="btn btn-primario" id="btn-nova-categoria">+ Nova categoria</button>
+          </div>
+          <div class="table-wrap">
+            <table class="tabela" id="tabela-categorias">
+              <thead>
+                <tr>
+                  <th>Ícone</th>
+                  <th>Nome</th>
+                  <th>ID</th>
+                  <th>Ordem</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Banners -->
+        <section class="aba" id="aba-banners">
+          <div class="toolbar">
+            <button type="button" class="btn btn-primario" id="btn-novo-banner">+ Novo banner</button>
+          </div>
+          <div class="table-wrap">
+            <table class="tabela" id="tabela-banners">
+              <thead>
+                <tr>
+                  <th>Imagem</th>
+                  <th>Título</th>
+                  <th>Subtítulo</th>
+                  <th>Ordem</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Promoções -->
+        <section class="aba" id="aba-promocoes">
+          <div class="card">
+            <h3>Produtos em promoção</h3>
+            <p class="texto-muted">Marque produtos com preço promocional. Eles aparecem com a tag “Promo” na loja.</p>
+            <div id="lista-promocoes" class="lista-promocoes"></div>
+          </div>
+          <div class="card">
+            <h3>Cupons de desconto</h3>
+            <div class="toolbar">
+              <button type="button" class="btn btn-primario" id="btn-novo-cupom">+ Novo cupom</button>
+            </div>
+            <div class="table-wrap">
+              <table class="tabela" id="tabela-cupons">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Tipo</th>
+                    <th>Valor</th>
+                    <th>Mínimo</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Loja -->
+        <section class="aba" id="aba-loja">
+          <div class="form-grid">
+            <div class="card">
+              <h3>Dados da loja</h3>
+              <div class="campo">
+                <label for="loja-nome">Nome da loja</label>
+                <input type="text" id="loja-nome" />
+              </div>
+              <div class="campo">
+                <label for="loja-slogan">Slogan</label>
+                <input type="text" id="loja-slogan" />
+              </div>
+              <div class="campo">
+                <label for="loja-logo">URL / caminho do logo</label>
+                <input type="text" id="loja-logo" placeholder="assets/images/logo.svg" />
+              </div>
+              <div class="campo">
+                <label for="loja-whatsapp">WhatsApp (com DDI)</label>
+                <input type="text" id="loja-whatsapp" placeholder="5511999999999" />
+                <small>Apenas números. Ex: 5511999999999</small>
+              </div>
+              <div class="campo">
+                <label for="loja-telefone">Telefone exibido</label>
+                <input type="text" id="loja-telefone" />
+              </div>
+              <div class="campo">
+                <label for="loja-endereco">Endereço</label>
+                <input type="text" id="loja-endereco" />
+              </div>
+              <div class="campo">
+                <label for="loja-instagram">Instagram (sem @)</label>
+                <input type="text" id="loja-instagram" />
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Horário e entrega</h3>
+              <div class="campo-row">
+                <div class="campo">
+                  <label for="loja-abertura">Abertura</label>
+                  <input type="time" id="loja-abertura" />
+                </div>
+                <div class="campo">
+                  <label for="loja-fechamento">Fechamento</label>
+                  <input type="time" id="loja-fechamento" />
+                </div>
+              </div>
+              <div class="campo">
+                <label for="loja-taxa">Taxa de entrega (R$)</label>
+                <input type="number" id="loja-taxa" step="0.01" min="0" />
+              </div>
+              <div class="campo">
+                <label for="loja-minimo">Pedido mínimo (R$)</label>
+                <input type="number" id="loja-minimo" step="0.01" min="0" />
+              </div>
+              <div class="campo check">
+                <label><input type="checkbox" id="loja-retirada" /> Permitir retirada no balcão</label>
+              </div>
+              <div class="campo check">
+                <label><input type="checkbox" id="loja-pix" /> Aceitar PIX</label>
+              </div>
+              <div class="campo">
+                <label for="loja-chave-pix">Chave PIX</label>
+                <input type="text" id="loja-chave-pix" />
+              </div>
+              <div class="campo">
+                <label for="loja-tipo-pix">Tipo da chave PIX</label>
+                <select id="loja-tipo-pix">
+                  <option value="telefone">Telefone</option>
+                  <option value="email">E-mail</option>
+                  <option value="cpf">CPF</option>
+                  <option value="cnpj">CNPJ</option>
+                  <option value="aleatoria">Aleatória</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>SEO e aparência</h3>
+              <div class="campo">
+                <label for="loja-seo-title">Título (SEO)</label>
+                <input type="text" id="loja-seo-title" />
+              </div>
+              <div class="campo">
+                <label for="loja-seo-desc">Descrição (SEO)</label>
+                <textarea id="loja-seo-desc" rows="3"></textarea>
+              </div>
+              <div class="campo-row">
+                <div class="campo">
+                  <label for="loja-cor-primaria">Cor primária</label>
+                  <input type="color" id="loja-cor-primaria" />
+                </div>
+                <div class="campo">
+                  <label for="loja-cor-destaque">Cor destaque</label>
+                  <input type="color" id="loja-cor-destaque" />
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Taxas por bairro</h3>
+              <div id="lista-bairros"></div>
+              <button type="button" class="btn btn-outline" id="btn-add-bairro">+ Adicionar bairro</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Config -->
+        <section class="aba" id="aba-config">
+          <div class="card" style="max-width:480px">
+            <h3>Login do painel</h3>
+            <div class="campo">
+              <label for="config-usuario">Usuário</label>
+              <input type="text" id="config-usuario" />
+            </div>
+            <div class="campo">
+              <label for="config-senha">Nova senha</label>
+              <input type="password" id="config-senha" placeholder="Deixe em branco para manter" />
+            </div>
+            <button type="button" class="btn btn-primario" id="btn-salvar-login">Atualizar login</button>
+          </div>
+          <div class="card" style="max-width:480px;margin-top:16px">
+            <h3>Dados locais</h3>
+            <p class="texto-muted">Restaura os arquivos JSON originais e remove alterações salvas neste navegador.</p>
+            <button type="button" class="btn btn-perigo" id="btn-resetar">Restaurar dados padrão</button>
+          </div>
+          <div class="card" style="max-width:480px;margin-top:16px">
+            <h3>Importar JSON</h3>
+            <p class="texto-muted">Cole o conteúdo de um arquivo JSON exportado.</p>
+            <div class="campo">
+              <label for="import-tipo">Tipo</label>
+              <select id="import-tipo">
+                <option value="produtos">Produtos</option>
+                <option value="categorias">Categorias</option>
+                <option value="banners">Banners</option>
+                <option value="loja">Loja</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="import-json">JSON</label>
+              <textarea id="import-json" rows="6" placeholder='[...]'></textarea>
+            </div>
+            <button type="button" class="btn btn-outline" id="btn-importar">Importar</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal genérico -->
+  <div class="modal-bg oculto" id="modal-bg">
+    <div class="modal-admin" id="modal-admin">
+      <div class="modal-admin-header">
+        <h3 id="modal-titulo">Editar</h3>
+        <button type="button" class="modal-x" id="modal-x">✕</button>
+      </div>
+      <div class="modal-admin-body" id="modal-body"></div>
+      <div class="modal-admin-footer">
+        <button type="button" class="btn btn-ghost" id="modal-cancelar">Cancelar</button>
+        <button type="button" class="btn btn-primario" id="modal-salvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-box" id="toast-box"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

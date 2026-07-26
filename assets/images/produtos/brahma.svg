@@ -1,0 +1,7 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="16" fill="#F8FAFC"/>
+  <rect x="55" y="30" width="90" height="130" rx="12" fill="#C41E3A"/>
+  <rect x="70" y="42" width="60" height="40" rx="6" fill="#fff" opacity=".25"/>
+  <ellipse cx="100" cy="30" rx="30" ry="10" fill="#C41E3A" opacity=".8"/>
+  <text x="100" y="180" text-anchor="middle" fill="#374151" font-family="Arial,sans-serif" font-size="13" font-weight="bold">Brahma</text>
+</svg>

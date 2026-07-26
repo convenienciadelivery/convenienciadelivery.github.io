@@ -1,0 +1,58 @@
+{
+  "nome": "Adega do Bairro",
+  "slogan": "As melhores bebidas com entrega rápida",
+  "logo": "assets/images/logo.svg",
+  "favicon": "assets/images/favicon.svg",
+  "whatsapp": "5511999999999",
+  "telefone": "(11) 99999-9999",
+  "email": "contato@adegadobairro.com.br",
+  "endereco": "Rua das Bebidas, 100 - Centro",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "instagram": "adegadobairro",
+  "facebook": "",
+  "horarioAbertura": "08:00",
+  "horarioFechamento": "23:59",
+  "diasFuncionamento": [0, 1, 2, 3, 4, 5, 6],
+  "taxaEntrega": 5.00,
+  "pedidoMinimo": 30.00,
+  "retiradaBalcao": true,
+  "aceitaPix": true,
+  "chavePix": "11999999999",
+  "tipoChavePix": "telefone",
+  "seo": {
+    "title": "Adega do Bairro | Delivery de Bebidas",
+    "description": "Peça cervejas, destilados, refrigerantes e mais. Entrega rápida pelo WhatsApp. Cardápio digital da Adega do Bairro.",
+    "keywords": "delivery bebidas, adega, cerveja, whisky, vodka, refrigerante"
+  },
+  "cupons": [
+    {
+      "codigo": "BEMVINDO10",
+      "tipo": "percentual",
+      "valor": 10,
+      "ativo": true,
+      "minimo": 50
+    },
+    {
+      "codigo": "FRETE5",
+      "tipo": "fixto",
+      "valor": 5,
+      "ativo": true,
+      "minimo": 40
+    }
+  ],
+  "taxasBairro": [
+    { "bairro": "Centro", "taxa": 5.00 },
+    { "bairro": "Jardins", "taxa": 8.00 },
+    { "bairro": "Vila Madalena", "taxa": 7.00 },
+    { "bairro": "Pinheiros", "taxa": 7.50 },
+    { "bairro": "Moema", "taxa": 10.00 }
+  ],
+  "admin": {
+    "usuario": "admin",
+    "senha": "admin123"
+  },
+  "corPrimaria": "#1B7A3D",
+  "corSecundaria": "#0D4F25",
+  "corDestaque": "#FF6B00"
+}

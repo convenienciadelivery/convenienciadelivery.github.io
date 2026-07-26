@@ -1,0 +1,77 @@
+:root {
+  /* Cores principais — estilo delivery de bebidas */
+  --cor-primaria: #1B7A3D;
+  --cor-primaria-escura: #0D4F25;
+  --cor-primaria-clara: #2E9B55;
+  --cor-destaque: #FF6B00;
+  --cor-destaque-escura: #E05A00;
+  --cor-sucesso: #16A34A;
+  --cor-erro: #DC2626;
+  --cor-aviso: #F59E0B;
+  --cor-info: #2563EB;
+
+  /* Neutros */
+  --cor-fundo: #F5F6F8;
+  --cor-superficie: #FFFFFF;
+  --cor-superficie-alt: #F0F2F5;
+  --cor-borda: #E5E7EB;
+  --cor-borda-forte: #D1D5DB;
+  --cor-texto: #1A1A1A;
+  --cor-texto-secundario: #6B7280;
+  --cor-texto-inverso: #FFFFFF;
+  --cor-overlay: rgba(0, 0, 0, 0.5);
+  --cor-sombra: rgba(0, 0, 0, 0.08);
+
+  /* Tipografia */
+  --fonte-principal: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --fonte-destaque: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --texto-xs: 0.75rem;
+  --texto-sm: 0.875rem;
+  --texto-base: 1rem;
+  --texto-lg: 1.125rem;
+  --texto-xl: 1.25rem;
+  --texto-2xl: 1.5rem;
+  --texto-3xl: 1.875rem;
+
+  /* Espaçamento */
+  --espaco-1: 0.25rem;
+  --espaco-2: 0.5rem;
+  --espaco-3: 0.75rem;
+  --espaco-4: 1rem;
+  --espaco-5: 1.25rem;
+  --espaco-6: 1.5rem;
+  --espaco-8: 2rem;
+  --espaco-10: 2.5rem;
+  --espaco-12: 3rem;
+
+  /* Layout */
+  --largura-max: 720px;
+  --header-altura: 64px;
+  --carrinho-largura: 100%;
+  --carrinho-max: 420px;
+  --raio-sm: 8px;
+  --raio-md: 12px;
+  --raio-lg: 16px;
+  --raio-xl: 24px;
+  --raio-full: 9999px;
+
+  /* Sombras */
+  --sombra-sm: 0 1px 2px var(--cor-sombra);
+  --sombra-md: 0 4px 12px var(--cor-sombra);
+  --sombra-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --sombra-float: 0 6px 20px rgba(27, 122, 61, 0.35);
+
+  /* Transições */
+  --transicao-rapida: 150ms ease;
+  --transicao-media: 250ms ease;
+  --transicao-lenta: 400ms ease;
+
+  /* Z-index */
+  --z-header: 100;
+  --z-categorias: 90;
+  --z-carrinho-btn: 200;
+  --z-overlay: 300;
+  --z-carrinho: 400;
+  --z-modal: 500;
+  --z-toast: 600;
+}
