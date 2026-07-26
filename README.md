@@ -4,29 +4,15 @@ Aplicação web estática (HTML/CSS/JS) pronta para produção — cardápio dig
 
 Ideal para adegas, bars e distribuidoras de bebidas.
 
-## Demonstração local
+## Como abrir (sem servidor)
 
-Como o app carrega arquivos JSON via `fetch`, é necessário um servidor HTTP simples (não abra o `index.html` direto no navegador).
+1. Abra a pasta `cardapio-digital-bebidas`
+2. Dê **duplo clique** em `index.html`
+3. Pronto — funciona offline no navegador
 
-### Opção 1 — Python
+Admin: abra `admin/index.html` da mesma forma.
 
-```bash
-cd cardapio-digital-bebidas
-python -m http.server 5500
-```
-
-Acesse: http://localhost:5500
-
-### Opção 2 — VS Code / Cursor
-
-Extensão **Live Server** → Open with Live Server.
-
-### Opção 3 — Node
-
-```bash
-npx serve .
-```
-
+> Os dados ficam em `data/*.js` (carregam sem servidor). Os `.json` são cópia para edição/exportação.
 ## Publicar no GitHub Pages
 
 ### Passo a passo (recomendado)

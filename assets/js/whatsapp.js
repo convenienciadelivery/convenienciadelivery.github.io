@@ -1,5 +1,6 @@
 /**
  * Finalização do pedido via WhatsApp
+ * Pagamento: somente PIX
  */
 const WhatsApp = {
   loja: null,
@@ -15,6 +16,15 @@ const WhatsApp = {
     const overlay = document.getElementById("modal-pedido");
     if (!overlay) return;
 
+    this.tipoEntrega = "entrega";
+    Carrinho.tipoEntrega = "entrega";
+    document.querySelectorAll(".tipo-entrega-opcao").forEach((b) => {
+      b.classList.toggle("ativo", b.dataset.tipo === "entrega");
+    });
+    document.getElementById("grupo-endereco")?.classList.remove("oculto");
+    document.getElementById("grupo-bairro")?.classList.remove("oculto");
+
+    this.preencherItens();
     this.preencherResumo();
     this.preencherBairros();
     this.configurarRetirada();
@@ -27,6 +37,25 @@ const WhatsApp = {
   fecharModal() {
     document.getElementById("modal-pedido")?.classList.remove("aberto");
     document.body.style.overflow = "";
+  },
+
+  preencherItens() {
+    const el = document.getElementById("pedido-itens-lista");
+    if (!el) return;
+
+    el.innerHTML = Carrinho.itens
+      .map(
+        (i) => `
+      <div class="pedido-item-linha">
+        <img src="${Utils.escaparHtml(i.imagem)}" alt="" onerror="this.src='assets/images/produto-placeholder.svg'" />
+        <div class="info">
+          <strong>${Utils.escaparHtml(i.nome)}</strong>
+          <span>${i.quantidade}x · ${Utils.formatarPreco(i.preco)} cada</span>
+        </div>
+        <div class="valor">${Utils.formatarPreco(i.preco * i.quantidade)}</div>
+      </div>`
+      )
+      .join("");
   },
 
   preencherResumo() {
@@ -44,7 +73,7 @@ const WhatsApp = {
           ? `<div class="linha"><span>Desconto</span><span>- ${Utils.formatarPreco(Carrinho.desconto())}</span></div>`
           : ""
       }
-      <div class="linha total"><span>Total</span><span>${Utils.formatarPreco(Carrinho.total())}</span></div>
+      <div class="linha total"><span>Total a pagar no PIX</span><span>${Utils.formatarPreco(Carrinho.total())}</span></div>
     `;
   },
 
@@ -53,7 +82,7 @@ const WhatsApp = {
     if (!select || !this.loja?.taxasBairro) return;
 
     select.innerHTML =
-      `<option value="">Selecione o bairro</option>` +
+      `<option value="">Taxa padrão de entrega</option>` +
       this.loja.taxasBairro
         .map(
           (b) =>
@@ -64,33 +93,30 @@ const WhatsApp = {
 
   configurarRetirada() {
     const opcaoRetirada = document.getElementById("opcao-retirada");
-    if (!opcaoRetirada) return;
-    opcaoRetirada.style.display = this.loja?.retiradaBalcao ? "" : "none";
+    const wrap = document.getElementById("tipo-entrega-wrap");
+    if (!this.loja?.retiradaBalcao) {
+      if (wrap) wrap.style.display = "none";
+      return;
+    }
+    if (wrap) wrap.style.display = "";
+    if (opcaoRetirada) opcaoRetirada.style.display = "";
   },
 
   configurarPix() {
-    const opcaoPix = document.getElementById("opcao-pix");
     const pixInfo = document.getElementById("pix-info");
-    if (opcaoPix) {
-      opcaoPix.style.display = this.loja?.aceitaPix ? "" : "none";
-    }
-    if (pixInfo && this.loja?.aceitaPix) {
-      pixInfo.innerHTML = `
-        <strong>PIX — ${Utils.escaparHtml(this.loja.tipoChavePix || "chave")}</strong>
-        ${Utils.escaparHtml(this.loja.chavePix || "")}
-      `;
-    }
+    if (!pixInfo) return;
+    const chave = this.loja?.chavePix || "Configure a chave PIX no admin";
+    const tipo = this.loja?.tipoChavePix || "chave";
+    pixInfo.innerHTML = `Chave PIX (${Utils.escaparHtml(tipo)}): <strong>${Utils.escaparHtml(chave)}</strong>`;
   },
 
   bindUI() {
     document
       .getElementById("modal-fechar")
       ?.addEventListener("click", () => this.fecharModal());
-    document
-      .getElementById("modal-pedido")
-      ?.addEventListener("click", (e) => {
-        if (e.target.id === "modal-pedido") this.fecharModal();
-      });
+    document.getElementById("modal-pedido")?.addEventListener("click", (e) => {
+      if (e.target.id === "modal-pedido") this.fecharModal();
+    });
 
     document.querySelectorAll(".tipo-entrega-opcao").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -101,33 +127,18 @@ const WhatsApp = {
         this.tipoEntrega = btn.dataset.tipo;
         Carrinho.tipoEntrega = this.tipoEntrega;
 
-        const enderecoGrupo = document.getElementById("grupo-endereco");
-        const bairroGrupo = document.getElementById("grupo-bairro");
         const isEntrega = this.tipoEntrega === "entrega";
-        enderecoGrupo?.classList.toggle("oculto", !isEntrega);
-        bairroGrupo?.classList.toggle("oculto", !isEntrega);
+        document.getElementById("grupo-endereco")?.classList.toggle("oculto", !isEntrega);
+        document.getElementById("grupo-bairro")?.classList.toggle("oculto", !isEntrega);
 
-        Carrinho.renderResumo();
+        Carrinho.render();
         this.preencherResumo();
-      });
-    });
-
-    document.querySelectorAll(".pagamento-opcao").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document
-          .querySelectorAll(".pagamento-opcao")
-          .forEach((b) => b.classList.remove("ativo"));
-        btn.classList.add("ativo");
-        this.pagamento = btn.dataset.pagamento;
-        document
-          .getElementById("pix-info")
-          ?.classList.toggle("visivel", this.pagamento === "pix");
       });
     });
 
     document.getElementById("pedido-bairro")?.addEventListener("change", (e) => {
       Carrinho.bairroSelecionado = e.target.value || null;
-      Carrinho.renderResumo();
+      Carrinho.render();
       this.preencherResumo();
     });
 
@@ -148,7 +159,7 @@ const WhatsApp = {
     ];
 
     if (this.tipoEntrega === "entrega") {
-      campos.push({ id: "pedido-endereco", msg: "Informe o endereço" });
+      campos.push({ id: "pedido-endereco", msg: "Informe o endereço de entrega" });
     }
 
     campos.forEach(({ id, msg }) => {
@@ -178,22 +189,16 @@ const WhatsApp = {
     const linhasProdutos = Carrinho.itens
       .map(
         (i) =>
-          `• ${i.nome} x${i.quantidade} — ${Utils.formatarPreco(i.preco * i.quantidade)}`
+          `• ${i.nome}\n  Qtd: ${i.quantidade} × ${Utils.formatarPreco(i.preco)} = ${Utils.formatarPreco(i.preco * i.quantidade)}`
       )
-      .join("\n");
+      .join("\n\n");
 
     const tipoTxt =
       this.tipoEntrega === "retirada" ? "🏪 Retirada no balcão" : "🛵 Entrega";
 
-    const pagMap = {
-      pix: "PIX",
-      dinheiro: "Dinheiro",
-      cartao: "Cartão na entrega",
-    };
-
     let msg = `🛒 *NOVO PEDIDO*\n`;
     msg += `━━━━━━━━━━━━━━\n\n`;
-    msg += `👤 *Cliente:*\n${nome}\n`;
+    msg += `👤 *Cliente:*\n${nome}\n\n`;
     msg += `📱 *Telefone:*\n${telefone}\n\n`;
     msg += `📦 *Tipo:*\n${tipoTxt}\n\n`;
 
@@ -203,7 +208,7 @@ const WhatsApp = {
       msg += `\n\n`;
     }
 
-    msg += `🛍️ *Produtos:*\n${linhasProdutos}\n\n`;
+    msg += `🛍️ *Itens do pedido:*\n\n${linhasProdutos}\n\n`;
     msg += `━━━━━━━━━━━━━━\n`;
     msg += `Subtotal: ${Utils.formatarPreco(Carrinho.subtotal())}\n`;
     msg += `Entrega: ${
@@ -216,11 +221,10 @@ const WhatsApp = {
       msg += `Desconto (${Carrinho.cupom?.codigo}): -${Utils.formatarPreco(Carrinho.desconto())}\n`;
     }
 
-    msg += `\n💰 *TOTAL: ${Utils.formatarPreco(Carrinho.total())}*\n`;
-    msg += `💳 Pagamento: ${pagMap[this.pagamento] || this.pagamento}\n`;
-
-    if (this.pagamento === "pix" && this.loja?.chavePix) {
-      msg += `Chave PIX: ${this.loja.chavePix}\n`;
+    msg += `\n💰 *TOTAL: ${Utils.formatarPreco(Carrinho.total())}*\n\n`;
+    msg += `💳 *Pagamento: SOMENTE PIX*\n`;
+    if (this.loja?.chavePix) {
+      msg += `Chave PIX (${this.loja.tipoChavePix || "chave"}): ${this.loja.chavePix}\n`;
     }
 
     if (obs) {
@@ -239,28 +243,87 @@ const WhatsApp = {
     }
 
     if (!this.validar()) {
-      Utils.toast("Preencha os campos obrigatórios", "erro");
+      Utils.toast("Preencha nome e endereço", "erro");
       return;
     }
 
     const whatsapp = String(this.loja?.whatsapp || "").replace(/\D/g, "");
     if (!whatsapp) {
-      Utils.toast("WhatsApp da loja não configurado", "erro");
+      Utils.toast("WhatsApp da loja não configurado no admin", "erro");
       return;
     }
 
     const mensagem = encodeURIComponent(this.montarMensagem());
     const url = `https://wa.me/${whatsapp}?text=${mensagem}`;
 
+    this.salvarPedidoNoHistorico();
+
     window.open(url, "_blank");
 
-    Utils.toast("Redirecionando para o WhatsApp...");
+    Utils.toast("Pedido salvo e enviado ao WhatsApp");
     this.fecharModal();
 
-    // Limpa carrinho após envio
     setTimeout(() => {
       Carrinho.limpar();
     }, 800);
+  },
+
+  salvarPedidoNoHistorico() {
+    if (!window.PedidosStore) return;
+
+    const nome = document.getElementById("pedido-nome")?.value.trim() || "";
+    const telefone = document.getElementById("pedido-telefone")?.value.trim() || "";
+    const telefoneDigits = telefone.replace(/\D/g, "");
+    const endereco = document.getElementById("pedido-endereco")?.value.trim() || "";
+    const bairro = document.getElementById("pedido-bairro")?.value || "";
+    const obs = document.getElementById("pedido-obs")?.value.trim() || "";
+
+    const pedido = {
+      id: `ped_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      dataHora: new Date().toISOString(),
+      nome,
+      telefone,
+      telefoneDigits,
+      endereco: this.tipoEntrega === "entrega" ? endereco : "",
+      bairro: this.tipoEntrega === "entrega" ? bairro : "",
+      tipoEntrega: this.tipoEntrega,
+      observacao: obs,
+      itens: Carrinho.itens.map((i) => ({
+        id: i.id,
+        nome: i.nome,
+        quantidade: i.quantidade,
+        preco: i.preco,
+        imagem: i.imagem,
+        subtotal: i.preco * i.quantidade,
+      })),
+      subtotal: Carrinho.subtotal(),
+      entrega: Carrinho.taxaEntrega(),
+      desconto: Carrinho.desconto(),
+      cupom: Carrinho.cupom?.codigo || null,
+      total: Carrinho.total(),
+      pagamento: "PIX",
+      chavePix: this.loja?.chavePix || "",
+      status: "novo",
+    };
+
+    PedidosStore.adicionar(pedido);
+
+    // Em file:// o admin não compartilha LocalStorage com a loja —
+    // baixa um JSON para importar no painel se precisar.
+    if (location.protocol === "file:") {
+      try {
+        const blob = new Blob([JSON.stringify(pedido, null, 2)], {
+          type: "application/json",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `pedido-${pedido.nome.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      } catch {
+        /* ignore */
+      }
+    }
   },
 };
 

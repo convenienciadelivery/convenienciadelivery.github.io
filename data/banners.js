@@ -1,0 +1,32 @@
+﻿/* Edite este arquivo OU o .json correspondente. Sem servidor: use os .js */
+window.CARDAPIO_DATA = window.CARDAPIO_DATA || {};
+window.CARDAPIO_DATA['banners'] = [
+  {
+    "id": "banner-1",
+    "titulo": "Happy Hour",
+    "subtitulo": "Cervejas com até 20% OFF",
+    "imagem": "assets/images/banner-1.svg",
+    "link": "#cervejas",
+    "ativo": true,
+    "ordem": 1
+  },
+  {
+    "id": "banner-2",
+    "titulo": "Combo Churrasco",
+    "subtitulo": "12 latas + gelo por R$ 49,90",
+    "imagem": "assets/images/banner-2.svg",
+    "link": "#combos",
+    "ativo": true,
+    "ordem": 2
+  },
+  {
+    "id": "banner-3",
+    "titulo": "Destilados Premium",
+    "subtitulo": "Whisky, vodka e gin com frete grátis*",
+    "imagem": "assets/images/banner-3.svg",
+    "link": "#destilados",
+    "ativo": true,
+    "ordem": 3
+  }
+]
+;

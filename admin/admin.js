@@ -44,13 +44,24 @@ const Admin = {
         /* fallback */
       }
     }
-    const url =
-      (typeof assetUrl === "function"
-        ? assetUrl(`data/${tipo}.json`)
-        : `../data/${tipo}.json`) + `?v=${Date.now()}`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Erro ao carregar ${tipo}`);
-    return resp.json();
+
+    // Dados embutidos (funciona abrindo admin/index.html direto, sem servidor)
+    if (window.CARDAPIO_DATA && window.CARDAPIO_DATA[tipo] != null) {
+      return JSON.parse(JSON.stringify(window.CARDAPIO_DATA[tipo]));
+    }
+
+    try {
+      const url =
+        (typeof assetUrl === "function"
+          ? assetUrl(`data/${tipo}.json`)
+          : `../data/${tipo}.json`) + `?v=${Date.now()}`;
+      const resp = await fetch(url);
+      if (resp.ok) return resp.json();
+    } catch {
+      /* file:// */
+    }
+
+    throw new Error(`Erro ao carregar ${tipo}`);
   },
 
   salvarLocal(tipo, data) {
@@ -86,6 +97,7 @@ const Admin = {
     document.getElementById("sidebar-loja-nome").textContent =
       this.dados.loja?.nome || "Loja";
     this.renderDashboard();
+    this.renderPedidos();
     this.renderProdutos();
     this.renderCategorias();
     this.renderBanners();
@@ -100,7 +112,7 @@ const Admin = {
       e.preventDefault();
       const user = document.getElementById("login-usuario").value.trim();
       const pass = document.getElementById("login-senha").value;
-      const admin = this.dados.loja?.admin || { usuario: "admin", senha: "admin123" };
+      const admin = this.dados.loja?.admin || { usuario: "admin", senha: "admin" };
 
       if (user === admin.usuario && pass === admin.senha) {
         sessionStorage.setItem(this.SESSION, "1");
@@ -121,6 +133,7 @@ const Admin = {
   bindNav() {
     const titulos = {
       dashboard: "Dashboard",
+      pedidos: "Pedidos",
       produtos: "Produtos",
       categorias: "Categorias",
       banners: "Banners",
@@ -193,6 +206,15 @@ const Admin = {
       this.renderBairros();
     });
 
+    document.getElementById("loja-logo-file")?.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      this.lerArquivoComoDataUrl(file, (dataUrl) => {
+        document.getElementById("loja-logo").value = dataUrl;
+        this.toast("Logo carregada — clique em Salvar alterações", "ok");
+      });
+    });
+
     document.getElementById("btn-salvar-login")?.addEventListener("click", () => {
       const user = document.getElementById("config-usuario").value.trim();
       const pass = document.getElementById("config-senha").value;
@@ -203,6 +225,43 @@ const Admin = {
       this.salvarLocal("loja", this.dados.loja);
       document.getElementById("config-senha").value = "";
       this.toast("Login atualizado", "ok");
+    });
+
+    document.getElementById("busca-pedidos")?.addEventListener("input", () => this.renderPedidos());
+    document.getElementById("filtro-status-pedidos")?.addEventListener("change", () => this.renderPedidos());
+    document.getElementById("btn-exportar-pedidos")?.addEventListener("click", () => this.exportarPedidos());
+    document.getElementById("btn-importar-pedido")?.addEventListener("click", () => {
+      document.getElementById("input-importar-pedido")?.click();
+    });
+    document.getElementById("input-importar-pedido")?.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          const pedidos = Array.isArray(data) ? data : [data];
+          pedidos.forEach((p) => {
+            if (!p.id) p.id = `ped_imp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+            if (!p.dataHora) p.dataHora = new Date().toISOString();
+            if (!p.status) p.status = "novo";
+            PedidosStore.adicionar(p);
+          });
+          this.renderPedidos();
+          this.toast(`${pedidos.length} pedido(s) importado(s)`, "ok");
+        } catch {
+          this.toast("Arquivo JSON inválido", "erro");
+        }
+        e.target.value = "";
+      };
+      reader.readAsText(file);
+    });
+    document.getElementById("btn-limpar-pedidos")?.addEventListener("click", () => {
+      if (!confirm("Apagar TODOS os pedidos salvos neste navegador?")) return;
+      PedidosStore.limpar();
+      this.renderPedidos();
+      this.renderDashboard();
+      this.toast("Histórico de pedidos limpo", "ok");
     });
 
     document.getElementById("btn-resetar")?.addEventListener("click", async () => {
@@ -251,6 +310,213 @@ const Admin = {
       this.dados.categorias.filter((c) => c.ativo !== false).length;
     document.getElementById("stat-banners").textContent =
       this.dados.banners.filter((b) => b.ativo !== false).length;
+
+    const pedidos = window.PedidosStore ? PedidosStore.listar() : [];
+    const elPed = document.getElementById("stat-pedidos");
+    if (elPed) elPed.textContent = pedidos.length;
+
+    const badge = document.getElementById("nav-badge-pedidos");
+    const novos = pedidos.filter((p) => p.status === "novo").length;
+    if (badge) {
+      if (novos > 0) {
+        badge.hidden = false;
+        badge.textContent = String(novos);
+      } else {
+        badge.hidden = true;
+      }
+    }
+  },
+
+  /* —— Pedidos —— */
+  formatarDataPedido(iso) {
+    try {
+      return new Date(iso).toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return iso || "";
+    }
+  },
+
+  formatarPreco(v) {
+    return Number(v || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+  },
+
+  waLinkCliente(digits) {
+    let n = String(digits || "").replace(/\D/g, "");
+    if (!n) return "#";
+    if (n.length <= 11) n = "55" + n;
+    return `https://wa.me/${n}`;
+  },
+
+  renderPedidos() {
+    const el = document.getElementById("lista-pedidos");
+    if (!el || !window.PedidosStore) return;
+
+    const busca = (document.getElementById("busca-pedidos")?.value || "")
+      .toLowerCase()
+      .trim();
+    const statusFiltro = document.getElementById("filtro-status-pedidos")?.value || "";
+
+    let lista = PedidosStore.listar();
+
+    if (statusFiltro) {
+      lista = lista.filter((p) => p.status === statusFiltro);
+    }
+    if (busca) {
+      lista = lista.filter((p) => {
+        const texto = [
+          p.nome,
+          p.telefone,
+          p.endereco,
+          p.bairro,
+          p.observacao,
+          ...(p.itens || []).map((i) => i.nome),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return texto.includes(busca);
+      });
+    }
+
+    this.renderDashboard();
+
+    if (!lista.length) {
+      el.innerHTML = `
+        <div class="card">
+          <p class="texto-muted" style="margin:0">Nenhum pedido encontrado.</p>
+          <p class="texto-muted" style="margin-top:8px">Quando um cliente finalizar e enviar pelo WhatsApp, o pedido aparece aqui.</p>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = lista
+      .map((p) => {
+        const itensHtml = (p.itens || [])
+          .map(
+            (i) => `
+            <div class="pedido-item-admin">
+              <img src="${this.esc(i.imagem || "../assets/images/produto-placeholder.svg")}" alt="" onerror="this.src='../assets/images/produto-placeholder.svg'"/>
+              <div>
+                <strong>${this.esc(i.nome)}</strong>
+                <span>${i.quantidade}x · ${this.formatarPreco(i.preco)} = <b>${this.formatarPreco(i.subtotal ?? i.preco * i.quantidade)}</b></span>
+              </div>
+            </div>`
+          )
+          .join("");
+
+        const wa = this.waLinkCliente(p.telefoneDigits || p.telefone);
+        const statusClass = p.status === "atendido" ? "badge-ok" : "badge-promo";
+        const statusLabel = p.status === "atendido" ? "Atendido" : "Novo";
+        const tipo =
+          p.tipoEntrega === "retirada" ? "Retirada no balcão" : "Entrega";
+
+        return `
+        <article class="pedido-card ${p.status === "novo" ? "pedido-novo" : ""}" data-pedido-id="${this.esc(p.id)}">
+          <div class="pedido-card-topo">
+            <div>
+              <div class="pedido-card-meta">${this.formatarDataPedido(p.dataHora)}</div>
+              <h3>${this.esc(p.nome || "Cliente")}</h3>
+            </div>
+            <span class="badge ${statusClass}">${statusLabel}</span>
+          </div>
+
+          <div class="pedido-card-grid">
+            <div>
+              <span class="label">Telefone / WhatsApp</span>
+              <a class="pedido-wa" href="${wa}" target="_blank" rel="noopener">${this.esc(p.telefone || "—")}</a>
+            </div>
+            <div>
+              <span class="label">Tipo</span>
+              <strong>${tipo}</strong>
+            </div>
+            <div>
+              <span class="label">Pagamento</span>
+              <strong>PIX${p.chavePix ? ` · ${this.esc(p.chavePix)}` : ""}</strong>
+            </div>
+          </div>
+
+          ${
+            p.tipoEntrega !== "retirada"
+              ? `<div class="pedido-endereco">
+                  <span class="label">Endereço de entrega</span>
+                  <p>${this.esc(p.endereco || "Não informado")}${p.bairro ? `<br><small>Bairro: ${this.esc(p.bairro)}</small>` : ""}</p>
+                </div>`
+              : ""
+          }
+
+          ${
+            p.observacao
+              ? `<div class="pedido-obs"><span class="label">Observação</span><p>${this.esc(p.observacao)}</p></div>`
+              : ""
+          }
+
+          <div class="pedido-itens-bloco">
+            <span class="label">Itens do pedido</span>
+            ${itensHtml}
+          </div>
+
+          <div class="pedido-totais">
+            <div><span>Subtotal</span><span>${this.formatarPreco(p.subtotal)}</span></div>
+            <div><span>Entrega</span><span>${p.tipoEntrega === "retirada" ? "Grátis" : this.formatarPreco(p.entrega)}</span></div>
+            ${p.desconto > 0 ? `<div><span>Desconto${p.cupom ? ` (${this.esc(p.cupom)})` : ""}</span><span>- ${this.formatarPreco(p.desconto)}</span></div>` : ""}
+            <div class="total"><span>Total</span><span>${this.formatarPreco(p.total)}</span></div>
+          </div>
+
+          <div class="pedido-acoes">
+            <a class="btn btn-primario btn-sm" href="${wa}" target="_blank" rel="noopener">Abrir WhatsApp</a>
+            ${
+              p.status !== "atendido"
+                ? `<button type="button" class="btn btn-outline btn-sm" data-atender="${this.esc(p.id)}">Marcar atendido</button>`
+                : `<button type="button" class="btn btn-outline btn-sm" data-reabrir="${this.esc(p.id)}">Reabrir</button>`
+            }
+            <button type="button" class="btn btn-ghost btn-sm" data-del-pedido="${this.esc(p.id)}" style="color:#DC2626">Excluir</button>
+          </div>
+        </article>`;
+      })
+      .join("");
+
+    el.querySelectorAll("[data-atender]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        PedidosStore.atualizarStatus(btn.dataset.atender, "atendido");
+        this.renderPedidos();
+        this.toast("Pedido marcado como atendido", "ok");
+      });
+    });
+    el.querySelectorAll("[data-reabrir]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        PedidosStore.atualizarStatus(btn.dataset.reabrir, "novo");
+        this.renderPedidos();
+      });
+    });
+    el.querySelectorAll("[data-del-pedido]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (!confirm("Excluir este pedido do histórico?")) return;
+        PedidosStore.remover(btn.dataset.delPedido);
+        this.renderPedidos();
+        this.toast("Pedido excluído", "ok");
+      });
+    });
+  },
+
+  exportarPedidos() {
+    const lista = PedidosStore.listar();
+    const blob = new Blob([JSON.stringify(lista, null, 2)], {
+      type: "application/json",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `pedidos-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    this.toast("Pedidos exportados", "ok");
   },
 
   /* —— Produtos —— */
@@ -373,7 +639,8 @@ const Admin = {
         <div class="campo"><label>Preço promo (R$)</label><input type="number" step="0.01" id="m-promo" value="${p.precoPromocional ?? ""}" placeholder="Opcional" /></div>
       </div>
       <div class="campo"><label>Categoria</label><select id="m-cat">${cats}</select></div>
-      <div class="campo"><label>Caminho da imagem</label><input id="m-img" value="${this.esc(p.imagem)}" /></div>
+      <div class="campo"><label>Caminho / URL da imagem</label><input id="m-img" value="${this.esc(p.imagem)}" /></div>
+      <div class="campo"><label>Ou enviar foto do computador</label><input type="file" id="m-img-file" accept="image/*" /></div>
       <div class="campo"><label>Ordem</label><input type="number" id="m-ordem" value="${p.ordem || 1}" /></div>
       <div class="campo check"><label><input type="checkbox" id="m-ativo" ${p.ativo !== false ? "checked" : ""}/> Ativo</label></div>
       <div class="campo check"><label><input type="checkbox" id="m-promocao" ${p.promocao ? "checked" : ""}/> Em promoção</label></div>
@@ -381,6 +648,16 @@ const Admin = {
     `;
 
     this.abrirModal();
+
+    document.getElementById("m-img-file")?.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      this.lerArquivoComoDataUrl(file, (dataUrl) => {
+        document.getElementById("m-img").value = dataUrl;
+        this.toast("Foto carregada", "ok");
+      });
+    });
+
     this.modalCallback = () => {
       const nome = document.getElementById("m-nome").value.trim();
       if (!nome) return this.toast("Informe o nome", "erro");
@@ -855,6 +1132,21 @@ const Admin = {
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+  },
+
+  lerArquivoComoDataUrl(file, callback) {
+    if (!file || !file.type.startsWith("image/")) {
+      this.toast("Selecione uma imagem", "erro");
+      return;
+    }
+    if (file.size > 2.5 * 1024 * 1024) {
+      this.toast("Imagem muito grande (máx. 2,5 MB)", "erro");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => callback(reader.result);
+    reader.onerror = () => this.toast("Erro ao ler a imagem", "erro");
+    reader.readAsDataURL(file);
   },
 };
 

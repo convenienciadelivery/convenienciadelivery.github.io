@@ -14,7 +14,7 @@ body {
   font-family: var(--fonte-principal);
   background: var(--cor-fundo);
   color: var(--cor-texto);
-  padding-bottom: 100px;
+  padding-bottom: 24px;
 }
 
 .app {

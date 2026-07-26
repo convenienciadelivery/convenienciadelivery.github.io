@@ -1,54 +1,106 @@
-.carrinho-btn-flutuante {
+.carrinho-barra {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--largura-max);
   z-index: var(--z-carrinho-btn);
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: var(--cor-primaria);
-  color: white;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0));
+  background: var(--cor-superficie);
+  border-top: 1px solid var(--cor-borda);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.carrinho-barra.oculto {
+  display: none;
+}
+
+.carrinho-barra-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: var(--sombra-float);
-  transition: transform var(--transicao-rapida), background var(--transicao-rapida);
+  gap: 12px;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: var(--raio-md);
+  background: var(--cor-superficie-alt);
+  transition: background var(--transicao-rapida);
 }
 
-.carrinho-btn-flutuante:hover {
-  background: var(--cor-primaria-escura);
-  transform: scale(1.05);
+.carrinho-barra-info:hover {
+  background: var(--cor-borda);
 }
 
-.carrinho-btn-flutuante:active {
-  transform: scale(0.95);
-}
-
-.carrinho-btn-flutuante svg {
-  width: 26px;
-  height: 26px;
-}
-
-.carrinho-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+.carrinho-barra-badge {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
   border-radius: var(--raio-full);
-  background: var(--cor-destaque);
+  background: var(--cor-primaria);
   color: white;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid white;
+  flex-shrink: 0;
 }
 
+.carrinho-barra-textos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.carrinho-barra-textos strong {
+  font-size: var(--texto-lg);
+  font-weight: 800;
+  color: var(--cor-primaria);
+  line-height: 1.2;
+}
+
+.carrinho-barra-textos small {
+  font-size: 11px;
+  color: var(--cor-texto-secundario);
+  font-weight: 600;
+}
+
+.carrinho-barra-finalizar {
+  flex-shrink: 0;
+  background: var(--cor-primaria);
+  color: white;
+  font-weight: 800;
+  font-size: var(--texto-sm);
+  padding: 14px 18px;
+  border-radius: var(--raio-md);
+  box-shadow: var(--sombra-float);
+  transition: background var(--transicao-rapida), transform var(--transicao-rapida);
+  white-space: nowrap;
+}
+
+.carrinho-barra-finalizar:hover:not(:disabled) {
+  background: var(--cor-primaria-escura);
+}
+
+.carrinho-barra-finalizar:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.carrinho-barra-finalizar:disabled {
+  background: var(--cor-borda-forte);
+  color: var(--cor-texto-secundario);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* legado: botão redondo removido, mantém classe vazia se referenciada */
 .carrinho-btn-flutuante.vazio-carrinho {
-  opacity: 0.85;
+  opacity: 1;
 }
 
 .carrinho-overlay {

@@ -210,6 +210,26 @@ const Carrinho = {
     badge.classList.add("animar-bounce");
   },
 
+  tentarFinalizar() {
+    if (!Horario.estaAberta()) {
+      Utils.toast("Loja fechada no momento", "erro");
+      return;
+    }
+    if (!this.itens.length) {
+      Utils.toast("Carrinho vazio", "erro");
+      return;
+    }
+    if (!this.pedidoMinimoOk()) {
+      Utils.toast(
+        `Pedido mínimo: ${Utils.formatarPreco(this.loja.pedidoMinimo)}`,
+        "erro"
+      );
+      return;
+    }
+    this.fechar();
+    WhatsApp.abrirModal();
+  },
+
   bindUI() {
     document
       .getElementById("carrinho-btn-flutuante")
@@ -226,37 +246,41 @@ const Carrinho = {
         const input = document.getElementById("cupom-input");
         this.aplicarCupom(input?.value);
       });
-    document.getElementById("btn-finalizar")?.addEventListener("click", () => {
-      if (!Horario.estaAberta()) {
-        Utils.toast("Loja fechada no momento", "erro");
-        return;
-      }
-      if (!this.itens.length) {
-        Utils.toast("Carrinho vazio", "erro");
-        return;
-      }
-      if (!this.pedidoMinimoOk()) {
-        Utils.toast(
-          `Pedido mínimo: ${Utils.formatarPreco(this.loja.pedidoMinimo)}`,
-          "erro"
-        );
-        return;
-      }
-      this.fechar();
-      WhatsApp.abrirModal();
-    });
+    document
+      .getElementById("btn-finalizar")
+      ?.addEventListener("click", () => this.tentarFinalizar());
+    document
+      .getElementById("btn-finalizar-barra")
+      ?.addEventListener("click", () => this.tentarFinalizar());
   },
 
   render() {
     const badge = document.getElementById("carrinho-badge");
-    const btnFloat = document.getElementById("carrinho-btn-flutuante");
+    const barra = document.getElementById("carrinho-barra");
+    const barraTotal = document.getElementById("barra-total");
+    const barraDetalhe = document.getElementById("barra-detalhe");
+    const btnBarraFinalizar = document.getElementById("btn-finalizar-barra");
     const totalItens = this.totalItens();
 
-    if (badge) {
-      badge.textContent = totalItens;
-      badge.style.display = totalItens > 0 ? "flex" : "none";
+    if (barra) {
+      barra.classList.toggle("oculto", totalItens === 0);
     }
-    btnFloat?.classList.toggle("vazio-carrinho", totalItens === 0);
+    if (badge) badge.textContent = totalItens;
+    if (barraTotal) barraTotal.textContent = Utils.formatarPreco(this.total());
+    if (barraDetalhe) {
+      const taxa = this.taxaEntrega();
+      barraDetalhe.textContent =
+        this.tipoEntrega === "retirada"
+          ? `${totalItens} ${totalItens === 1 ? "item" : "itens"} · retirada`
+          : `${totalItens} ${totalItens === 1 ? "item" : "itens"} · inclui entrega ${Utils.formatarPreco(taxa)}`;
+    }
+    if (btnBarraFinalizar) {
+      btnBarraFinalizar.disabled =
+        !totalItens || !this.pedidoMinimoOk() || !Horario.estaAberta();
+    }
+
+    // Espaço inferior para a barra não cobrir produtos
+    document.body.style.paddingBottom = totalItens > 0 ? "96px" : "";
 
     const lista = document.getElementById("carrinho-itens");
     const vazio = document.getElementById("carrinho-vazio");

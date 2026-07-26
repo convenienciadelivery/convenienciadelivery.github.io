@@ -1,4 +1,6 @@
-{
+﻿/* Edite este arquivo OU o .json correspondente. Sem servidor: use os .js */
+window.CARDAPIO_DATA = window.CARDAPIO_DATA || {};
+window.CARDAPIO_DATA['loja'] = {
   "nome": "Adega do Bairro",
   "slogan": "As melhores bebidas com entrega rápida",
   "logo": "assets/images/logo.svg",
@@ -56,3 +58,4 @@
   "corSecundaria": "#0D4F25",
   "corDestaque": "#FF6B00"
 }
+;

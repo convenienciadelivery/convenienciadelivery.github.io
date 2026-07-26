@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <script>
     (function () {
+      if (location.protocol === "file:") {
+        window.APP_BASE = "";
+        window.assetUrl = function (p) {
+          return String(p || "").replace(/^\.\//, "").replace(/^\//, "");
+        };
+        return;
+      }
       var path = location.pathname || "/";
       var base = path.indexOf("/admin") !== -1
         ? path.replace(/\/admin(?:\/.*)?$/, "/")
@@ -12,7 +19,6 @@
       window.assetUrl = function (p) {
         return base + String(p || "").replace(/^\.\//, "").replace(/^\//, "");
       };
-      /* Admin NÃO usa <base> para não quebrar admin.css */
     })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -40,7 +46,7 @@
         <p class="login-erro oculto" id="login-erro">Usuário ou senha incorretos</p>
         <button type="submit" class="btn btn-primario btn-bloco">Entrar</button>
       </form>
-      <p class="login-dica">Padrão: <strong>admin</strong> / <strong>admin123</strong></p>
+      <p class="login-dica">Login: <strong>admin</strong> / Senha: <strong>admin</strong></p>
       <a href="../" class="voltar-loja">← Voltar para a loja</a>
     </div>
   </div>
@@ -57,6 +63,7 @@
       </div>
       <nav class="sidebar-nav">
         <button type="button" class="nav-item ativo" data-aba="dashboard">📊 Dashboard</button>
+        <button type="button" class="nav-item" data-aba="pedidos">🧾 Pedidos <span class="nav-badge" id="nav-badge-pedidos" hidden>0</span></button>
         <button type="button" class="nav-item" data-aba="produtos">🍺 Produtos</button>
         <button type="button" class="nav-item" data-aba="categorias">📁 Categorias</button>
         <button type="button" class="nav-item" data-aba="banners">🖼️ Banners</button>
@@ -100,6 +107,10 @@
               <span class="stat-label">Banners</span>
               <strong id="stat-banners">0</strong>
             </div>
+            <div class="stat-card">
+              <span class="stat-label">Pedidos enviados</span>
+              <strong id="stat-pedidos">0</strong>
+            </div>
           </div>
           <div class="card">
             <h3>Como editar o cardápio</h3>
@@ -115,6 +126,28 @@
             <h3>⚠️ Importante para venda comercial</h3>
             <p>Troque a senha padrão em <strong>Configurações</strong> antes de entregar ao cliente. Configure WhatsApp, horários e taxa de entrega.</p>
           </div>
+        </section>
+
+        <!-- Pedidos -->
+        <section class="aba" id="aba-pedidos">
+          <div class="toolbar">
+            <input type="search" id="busca-pedidos" placeholder="Buscar por nome, telefone, endereço..." />
+            <select id="filtro-status-pedidos">
+              <option value="">Todos os status</option>
+              <option value="novo">Novos</option>
+              <option value="atendido">Atendidos</option>
+            </select>
+            <button type="button" class="btn btn-outline" id="btn-exportar-pedidos">Exportar pedidos</button>
+            <button type="button" class="btn btn-outline" id="btn-importar-pedido">Importar pedido JSON</button>
+            <input type="file" id="input-importar-pedido" accept="application/json,.json" hidden />
+            <button type="button" class="btn btn-perigo" id="btn-limpar-pedidos">Limpar histórico</button>
+          </div>
+          <p class="texto-muted" style="margin-bottom:12px">
+            Pedidos salvos quando o cliente clica em <strong>Enviar pedido no WhatsApp</strong>.
+            No GitHub Pages / mesmo site, aparecem automaticamente.
+            Se abrir os HTML direto no PC, importe o arquivo JSON baixado no envio.
+          </p>
+          <div id="lista-pedidos" class="lista-pedidos"></div>
         </section>
 
         <!-- Produtos -->
@@ -234,6 +267,11 @@
               <div class="campo">
                 <label for="loja-logo">URL / caminho do logo</label>
                 <input type="text" id="loja-logo" placeholder="assets/images/logo.svg" />
+              </div>
+              <div class="campo">
+                <label for="loja-logo-file">Ou enviar logo (foto do PC)</label>
+                <input type="file" id="loja-logo-file" accept="image/*" />
+                <small>A imagem fica salva no navegador ao clicar em Salvar</small>
               </div>
               <div class="campo">
                 <label for="loja-whatsapp">WhatsApp (com DDI)</label>
@@ -385,6 +423,11 @@
 
   <div class="toast-box" id="toast-box"></div>
 
+  <script src="../data/loja.js"></script>
+  <script src="../data/produtos.js"></script>
+  <script src="../data/categorias.js"></script>
+  <script src="../data/banners.js"></script>
+  <script src="../assets/js/pedidos-store.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

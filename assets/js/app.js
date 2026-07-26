@@ -1,6 +1,6 @@
 /**
- * App principal — carrega dados e inicializa módulos
- * Dados em data/*.json podem ser sobrescritos pelo admin via LocalStorage
+ * App principal — carrega dados SEM precisar de servidor
+ * Ordem: LocalStorage (admin) → CARDAPIO_DATA (data/*.js) → fetch JSON (opcional)
  */
 const App = {
   STORAGE_PREFIX: "cardapio_admin_",
@@ -41,7 +41,7 @@ const App = {
       if (loading) {
         loading.innerHTML = `
           <p style="color:#DC2626;font-weight:700;">Erro ao carregar o cardápio.</p>
-          <p style="font-size:0.875rem;margin-top:8px;">Verifique sua conexão e tente novamente.</p>
+          <p style="font-size:0.875rem;margin-top:8px;">Abra a pasta do projeto e dê duplo clique em index.html</p>
           <button onclick="location.reload()" style="margin-top:16px;padding:10px 20px;background:#1B7A3D;color:#fff;border-radius:999px;font-weight:700;">Recarregar</button>
         `;
       }
@@ -49,20 +49,34 @@ const App = {
   },
 
   async carregarDados(tipo) {
-    // Prioridade: dados salvos no admin (LocalStorage) > JSON estático
+    // 1) Alterações do painel admin (LocalStorage)
     const local = localStorage.getItem(this.STORAGE_PREFIX + tipo);
     if (local) {
       try {
         return JSON.parse(local);
       } catch {
-        /* continua para fetch */
+        /* continua */
       }
     }
 
-    const url = (typeof assetUrl === "function" ? assetUrl(`data/${tipo}.json`) : `data/${tipo}.json`) + `?v=${Date.now()}`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Falha ao carregar ${tipo}.json`);
-    return resp.json();
+    // 2) Dados embutidos em data/*.js (funciona sem servidor / file://)
+    if (window.CARDAPIO_DATA && window.CARDAPIO_DATA[tipo] != null) {
+      return window.CARDAPIO_DATA[tipo];
+    }
+
+    // 3) Fallback fetch (GitHub Pages / servidor local)
+    try {
+      const url =
+        (typeof assetUrl === "function"
+          ? assetUrl(`data/${tipo}.json`)
+          : `data/${tipo}.json`) + `?v=${Date.now()}`;
+      const resp = await fetch(url);
+      if (resp.ok) return resp.json();
+    } catch {
+      /* file:// ou offline */
+    }
+
+    throw new Error(`Dados não encontrados: ${tipo}`);
   },
 
   aplicarTema(loja) {
